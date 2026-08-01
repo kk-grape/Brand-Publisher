@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** 全局操作反馈；显示时机和自动关闭计时由 App 统一管理。 */
 import { CheckCircle2, CircleAlert } from 'lucide-vue-next'
 defineProps<{ message: string; type: 'success' | 'error' }>()
 </script>

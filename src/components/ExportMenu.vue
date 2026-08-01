@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** 轻量导出菜单：仅声明用户选择，实际文件生成由父组件处理。 */
 import { FileCode2, ImageDown } from 'lucide-vue-next'
 
 defineProps<{ disabled: boolean }>()

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** 受控预览模式切换器，通过 v-model 风格事件把选择同步给 App。 */
 import { Monitor, Smartphone } from 'lucide-vue-next'
 import type { PreviewMode } from '../types/article'
 

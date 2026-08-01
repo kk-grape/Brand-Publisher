@@ -1,3 +1,4 @@
+/** Markdown 解析器：把 markdown-it token 归一化为模板可消费的 ArticleDocument。 */
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
 import type Token from 'markdown-it/lib/token.mjs'
@@ -5,6 +6,7 @@ import type { ArticleBlock, ArticleDocument, ArticleStats } from '../types/artic
 
 const md = new MarkdownIt({ html: false, linkify: false, typographer: true, breaks: false })
 
+/** 只保留公众号排版需要的少量行内标签，用户输入的原始 HTML 不会直接放行。 */
 function safeInline(token?: Token): string {
   if (!token) return ''
   return DOMPurify.sanitize(md.renderer.renderInline(token.children ?? [], md.options, {}), {
@@ -28,6 +30,7 @@ export function parseArticle(source: string): ArticleDocument {
 
   const push = (block: Omit<ArticleBlock, 'id'>) => blocks.push({ ...block, id: `block-${id++}` })
 
+  // markdown-it 使用 open → inline → close token 表示常见块，这里按类型依次消费。
   while (index < tokens.length) {
     const token = tokens[index]
 
@@ -53,6 +56,7 @@ export function parseArticle(source: string): ArticleDocument {
     }
 
     if (token.type === 'blockquote_open') {
+      // 引用内部可能还有 paragraph token，找到结束位置后只提取其中的 inline 内容。
       const closeIndex = tokens.findIndex((item, position) => position > index && item.type === 'blockquote_close')
       const inline = tokens.slice(index + 1, closeIndex).find((item) => item.type === 'inline')
       const html = safeInline(inline)
@@ -67,6 +71,7 @@ export function parseArticle(source: string): ArticleDocument {
       const items: Array<{ text: string; html: string }> = []
       let cursor = index + 1
       let depth = 1
+      // depth 防止嵌套列表的 close token 提前结束当前列表。
       while (cursor < tokens.length && depth > 0) {
         if (tokens[cursor].type === token.type) depth += 1
         if (tokens[cursor].type === closeType) depth -= 1
@@ -93,7 +98,7 @@ export function parseArticle(source: string): ArticleDocument {
     year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(new Date())
 
-  return { title: title || '未命名文章', blocks, brand: 'NVIDIA 英伟达', publishedAt: now, location: '上海' }
+  return { title, blocks, brand: 'NVIDIA 英伟达', publishedAt: now, location: '上海' }
 }
 
 export function getArticleStats(source: string, article: ArticleDocument): ArticleStats {

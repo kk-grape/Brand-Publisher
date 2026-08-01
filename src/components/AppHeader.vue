@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** 顶部导航：管理模板菜单、导出菜单以及全局操作事件。 */
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Check, ChevronDown, Download, Plus, RotateCcw, Sparkles } from 'lucide-vue-next'
 import type { TemplateId, TemplateMenuItem } from '../types/article'
@@ -13,6 +14,7 @@ const exportArea = ref<HTMLElement | null>(null)
 const templateArea = ref<HTMLElement | null>(null)
 
 function closeOnOutside(event: MouseEvent) {
+  // 两个菜单各自判断点击目标，点击页面空白处即可同时收起。
   if (!exportArea.value?.contains(event.target as Node)) showExport.value = false
   if (!templateArea.value?.contains(event.target as Node)) showTemplates.value = false
 }
@@ -23,6 +25,7 @@ function closeOnEscape(event: KeyboardEvent) {
   }
 }
 onMounted(() => {
+  // 监听挂在 document 上，所以组件卸载时必须成对移除。
   document.addEventListener('click', closeOnOutside)
   document.addEventListener('keydown', closeOnEscape)
 })
@@ -32,6 +35,7 @@ onBeforeUnmount(() => {
 })
 
 function choose(kind: 'html' | 'png') {
+  // 先关闭菜单，再把具体导出任务交给 App 执行。
   showExport.value = false
   kind === 'html' ? emit('exportHtml') : emit('exportPng')
 }

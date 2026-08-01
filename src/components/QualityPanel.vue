@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** 可拖动质量面板：默认隐藏，并通过 Pointer Events 同时支持鼠标与触屏。 */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { CSSProperties } from 'vue'
 import { AlertTriangle, Check, CircleX, PanelRightOpen, X } from 'lucide-vue-next'
@@ -6,7 +7,7 @@ import type { QualityResult } from '../types/article'
 
 const props = defineProps<{ results: QualityResult[] }>()
 const panelRef = ref<HTMLElement | null>(null)
-const isVisible = ref(true)
+const isVisible = ref(false)
 const isPositioned = ref(false)
 const isDragging = ref(false)
 const position = ref({ x: 0, y: 0 })
@@ -16,6 +17,7 @@ let dragHandle: HTMLElement | null = null
 const viewportGap = 12
 
 const grade = computed(() => {
+  // 总评级采用“最严重结果优先”，错误高于警告，全部成功才显示优秀。
   if (!props.results.length) return { label: '待检测', tone: 'neutral' }
   if (props.results.some((result) => result.status === 'error')) return { label: '需调整', tone: 'error' }
   if (props.results.some((result) => result.status === 'warning')) return { label: '良好', tone: 'warning' }
@@ -32,6 +34,7 @@ function iconFor(status: QualityResult['status']) {
 }
 
 function clampPosition(x: number, y: number) {
+  // 把坐标限制在可视区域内，始终留出 viewportGap，避免面板被拖丢。
   const panel = panelRef.value
   if (!panel) return { x, y }
   const maxX = Math.max(viewportGap, window.innerWidth - panel.offsetWidth - viewportGap)
@@ -43,6 +46,7 @@ function clampPosition(x: number, y: number) {
 }
 
 async function resetPosition() {
+  // 面板需要先渲染才能得到真实宽高，所以等待 nextTick 后再计算右下角坐标。
   isPositioned.value = false
   await nextTick()
   const panel = panelRef.value
@@ -59,6 +63,7 @@ function startDrag(event: PointerEvent) {
   event.preventDefault()
   activePointerId = event.pointerId
   dragHandle = event.currentTarget as HTMLElement
+  // 捕获当前 pointer，指针即使移出标题栏仍可持续收到拖动事件。
   dragHandle.setPointerCapture?.(event.pointerId)
   dragOffset.x = event.clientX - position.value.x
   dragOffset.y = event.clientY - position.value.y
@@ -89,11 +94,13 @@ function closePanel() {
 }
 
 async function showPanel() {
+  // 每次重新显示都回到默认右下角，而不是沿用上一次拖动位置。
   isVisible.value = true
   await resetPosition()
 }
 
 function handleResize() {
+  // 浏览器缩放后重新夹紧坐标，防止原位置落到新视口之外。
   if (!isVisible.value || !isPositioned.value) return
   position.value = clampPosition(position.value.x, position.value.y)
 }
@@ -103,10 +110,10 @@ onMounted(() => {
   window.addEventListener('pointerup', endDrag)
   window.addEventListener('pointercancel', endDrag)
   window.addEventListener('resize', handleResize)
-  resetPosition()
 })
 
 watch(() => props.results.length, async () => {
+  // 结果数量变化可能改变面板高度，需要再次校正位置。
   if (!isVisible.value) return
   await nextTick()
   handleResize()
@@ -122,6 +129,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!-- Teleport 让面板脱离预览容器裁切，但恢复按钮仍留在预览组件内。 -->
   <Teleport to="body">
     <Transition name="quality-float">
       <aside v-if="isVisible" ref="panelRef" :class="['quality-panel', { dragging: isDragging }]" :style="panelStyle">

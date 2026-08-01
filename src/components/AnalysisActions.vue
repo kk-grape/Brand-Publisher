@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** 三张分析摘要卡只展示规则统计，不提供独立的虚假操作入口。 */
 import { FileSearch2, Focus, PanelsTopLeft } from 'lucide-vue-next'
 import type { ArticleStats } from '../types/article'
 

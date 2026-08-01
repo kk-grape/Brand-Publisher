@@ -1,6 +1,7 @@
 <script setup lang="ts">
+/** 文章预览外壳：切换预览宽度，并向导出逻辑暴露真实文章 DOM。 */
 import { computed, ref } from 'vue'
-import { Clipboard, FileText } from 'lucide-vue-next'
+import { AlignLeft, Clipboard } from 'lucide-vue-next'
 import type { ArticleDocument, PreviewMode, QualityResult } from '../types/article'
 import NvidiaTemplate from '../templates/NvidiaTemplate.vue'
 import PreviewToolbar from './PreviewToolbar.vue'
@@ -12,6 +13,7 @@ const previewBody = ref<HTMLElement | null>(null)
 const shellClass = computed(() => ['article-stage', `is-${props.mode}`])
 
 function getArticleElement(): HTMLElement | null {
+  // PNG 只截取带标记的 article，不包含工具栏、空状态和质量面板。
   return previewBody.value?.querySelector('[data-brand-article="true"]') as HTMLElement | null
 }
 defineExpose({ getArticleElement })
@@ -27,9 +29,9 @@ defineExpose({ getArticleElement })
       <div ref="previewBody" class="preview-body">
         <NvidiaTemplate v-if="article" :article="article" />
         <div v-else class="preview-empty">
-          <span><FileText :size="30" /></span>
-          <h3>排版预览将在这里生成</h3>
-          <p>在左侧粘贴文章，然后点击“一键智能排版”。</p>
+          <span><AlignLeft :size="24" stroke-width="1.8" /></span>
+          <h3>还没有预览内容</h3>
+          <p>在左侧输入或粘贴文章，点击「一键智能排版」后即可查看效果。</p>
         </div>
       </div>
     </div>
